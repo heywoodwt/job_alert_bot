@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: LinkedIn Job Alert Bot - scrapes LinkedIn guest jobs API and sends SNS notifications
+
+Parameters:
+  FeedUrls:
+    Type: String
+    Description: Comma-separated LinkedIn guest API search URLs
+  IncludeKeywords:
+    Type: String
+    Default: ''
+    Description: Comma-separated keywords (job must match at least one)
+  ExcludeKeywords:
+    Type: String
+    Default: ''
+    Description: Comma-separated keywords (job is rejected if any match)
+  NotificationEmail:
+    Type: String
+    Description: Email address to receive job alerts
+
+Resources:
+  JobAlertFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src.handler.lambda_handler
+      Runtime: python3.12
+      MemorySize: 256
+      Timeout: 60
+      Environment:
+        Variables:
+          FEED_URLS: !Ref FeedUrls
+          INCLUDE_KEYWORDS: !Ref IncludeKeywords
+          EXCLUDE_KEYWORDS: !Ref ExcludeKeywords
+          SNS_TOPIC_ARN: !Ref JobAlertTopic
+          DYNAMODB_TABLE: !Ref SeenJobsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SeenJobsTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt JobAlertTopic.TopicName
+      Events:
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(15 minutes)
+            Enabled: true
+
+  SeenJobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: job-alert-seen-jobs
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: job_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: job_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  JobAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: job-alert-notifications
+
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+      TopicArn: !Ref JobAlertTopic
+
+Outputs:
+  FunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt JobAlertFunction.Arn
+  TopicArn:
+    Description: SNS topic ARN
+    Value: !Ref JobAlertTopic
+  TableName:
+    Description: DynamoDB table name
+    Value: !Ref SeenJobsTable
