@@ -7,4 +7,4 @@ s3_prefix = "job-alert-bot"
 region = "us-east-1"
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
-parameter_overrides = "FeedUrls=\"YOUR_FEED_URL_HERE\" IncludeKeywords=\"data scientist,machine learning, data engineer\" ExcludeKeywords=\"senior,staff,principal\" NotificationEmail=\"your@email.com\""
+parameter_overrides = """FeedUrls="https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=data+scientist&location=California%2C+United+States&f_TPR=r86400&start=0,https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=data+engineer&location=California%2C+United+States&f_TPR=r86400&start=0,https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=data+science&location=United+States&f_TPR=r86400&start=0" IncludeKeywords="data scientist,data engineer,data science,machine learning" ExcludeKeywords="senior,staff,principal" NotificationEmail="your@email.com" """

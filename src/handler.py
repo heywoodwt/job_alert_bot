@@ -15,6 +15,17 @@ def _parse_keywords(env_var: str) -> list[str]:
     return [kw.strip() for kw in raw.split(",") if kw.strip()]
 
 
+def _deduplicate_jobs(jobs: list[dict]) -> list[dict]:
+    """Remove duplicate jobs (same job_id from multiple feeds)."""
+    seen = set()
+    unique = []
+    for job in jobs:
+        if job["job_id"] not in seen:
+            seen.add(job["job_id"])
+            unique.append(job)
+    return unique
+
+
 def _get_new_jobs(jobs: list[dict], table) -> list[dict]:
     """Filter out jobs that are already in DynamoDB."""
     new_jobs = []
@@ -29,7 +40,7 @@ def _store_jobs(jobs: list[dict], table) -> None:
     """Write job IDs to DynamoDB with a 30-day TTL."""
     now = datetime.now(timezone.utc)
     ttl = int(time.time()) + 86400 * 30  # 30 days from now
-    with table.batch_writer() as batch:
+    with table.batch_writer(overwrite_by_pkeys=["job_id"]) as batch:
         for job in jobs:
             batch.put_item(Item={
                 "job_id": job["job_id"],
@@ -51,9 +62,9 @@ def lambda_handler(event, context):
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(table_name)
 
-    # Fetch and parse all feeds
-    all_jobs = fetch_and_parse_feeds(feed_urls)
-    print(f"Fetched {len(all_jobs)} jobs from {len(feed_urls)} feed(s)")
+    # Fetch and parse all feeds, deduplicate across feeds
+    all_jobs = _deduplicate_jobs(fetch_and_parse_feeds(feed_urls))
+    print(f"Fetched {len(all_jobs)} unique jobs from {len(feed_urls)} feed(s)")
 
     # Filter out already-seen jobs
     new_jobs = _get_new_jobs(all_jobs, table)

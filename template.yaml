@@ -21,7 +21,10 @@ Parameters:
 Resources:
   JobAlertFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.12
     Properties:
+      CodeUri: .
       Handler: src.handler.lambda_handler
       Runtime: python3.12
       MemorySize: 256
