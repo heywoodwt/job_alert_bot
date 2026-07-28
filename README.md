@@ -1,0 +1,1 @@
+This is a job tracking bot I built for my job search as a grad student. It uses a data pipeline that scrapes jobs from LinkedIn and sends an AWS SNS notification when a position meets certain requirements. 
