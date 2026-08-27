@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .venv/
 samconfig.toml
+.idea/
+.DS_Store
