@@ -78,6 +78,3 @@ Tear down with `sam delete --stack-name job-alert-bot`.
 committed `.example` shows the shape. No credentials live in this repo — Lambda gets
 its DynamoDB and SNS permissions from the IAM policies in `template.yaml`.
 
-## License
-
-MIT
